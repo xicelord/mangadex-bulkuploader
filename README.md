@@ -1,15 +1,22 @@
-Usage:
+# Getting started:
+1. Install NodeJS (if you haven't already)
+2. Fetch the respository (or download it as zip)
+3. Download the dependencies ("npm i")
+4. Execute a command ("node index [command] [options]")
+
+
+# Usage:
 
   index [command] [options]
 
-Commands:
+## Commands:
 
     generate [options]  Generates a upload template.
     login [options]     Login to mangadex. Generate a cookie-file
     upload [options]    Upload according to upload template. Make sure login first!
 
 
-Options of the commands:
+## Options of the commands:
 
 	generate
 		-d, --directory <directory>		Directory which should be scanned (eg: "/path/to/scan")
@@ -29,7 +36,7 @@ Options of the commands:
 		-r, --resume <resume_at>		Position to resume at (eg: 1) (Default: 1)
 
 
-Instructions:
+## Instructions:
 
 	(1) Generate a template using "generate"
 	(2) Open the generated template and fill in the missing fields
