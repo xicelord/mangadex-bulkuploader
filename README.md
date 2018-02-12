@@ -1,5 +1,5 @@
 # Warning!
-The script currently has a bug which make the server reject all uploaded chapters.
+The script currently has a bug which makes the server reject all uploaded chapters.
 Do not use it. I'll make sure to fix it later.
 
 # Getting started:
