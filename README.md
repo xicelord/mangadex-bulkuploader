@@ -1,6 +1,6 @@
 Usage:
 
-  index [options] [command]
+  index [command] [options]
 
 Commands:
 
