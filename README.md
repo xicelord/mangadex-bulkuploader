@@ -1,3 +1,7 @@
+# Warning!
+The script currently has a bug which make the server reject all uploaded chapters.
+Do not use it. I'll make sure to fix it later.
+
 # Getting started:
 1. Install NodeJS (if you haven't already)
 2. Fetch the respository (or download it as zip)
