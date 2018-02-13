@@ -9,7 +9,7 @@ const cookieStore = require('tough-cookie-file-store');
 var request = require('request');
 
 const cookieFilePath = './mangadex-cookies.json';
-const versionCode = '0.1';
+const versionCode = '0.1.1';
 var cookieJar;
 
 //Create cookie-file (if not exists)
