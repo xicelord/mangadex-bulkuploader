@@ -50,7 +50,7 @@ program
 	.option('-l, --language <language>', '', parseInt)
 	.action((options) => {
 		//Check input
-		if (!Number.isInteger(options.group)) { options.group = 0; }
+		if (!Number.isInteger(options.group)) { options.group = -1; }
 		if (!options.language) { options.language = 1; }
 		if (!Number.isInteger(options.language)) { console.log('Error: Invalid language-id'); process.exit(12) }
 		if (options.volume_regex === undefined) { options.volume_regex = 'v(?:olume(?:.)?)?(\\d+)'; }
@@ -87,7 +87,8 @@ program
 					let entry = {
 						file: file,
 						title: '',
-						group: options.group
+						group: options.group,
+						language: options.language
 					};
 
 					//Match volume
@@ -173,53 +174,67 @@ program
 	.option('-m, --manga <n>', '', parseInt)
 	.option('-r, --resume <n>', '', parseInt)
 	.action((options) => {
-		//Check input
-		if (!Number.isInteger(options.manga)) { console.log('Error: No manga was specified.'); process.exit(13); }
-		if (!Number.isInteger(options.resume)) { options.resume = 1; }
-		if (!options.template) { console.log('Error: No template-file has been specified'); process.exit(4); }
+		//Check if user is logged in
+		isLoggedIn((err, logged_in) => {
+			if (!err) {
+				if (logged_in) {
+					//Check input
+					if (!Number.isInteger(options.manga)) { console.log('Error: No manga was specified.'); process.exit(13); }
+					if (!Number.isInteger(options.resume)) { options.resume = 1; }
+					if (!options.template) { console.log('Error: No template-file has been specified'); process.exit(4); }
 
-		//Load template
-		fs.readFile(options.template, 'utf8', function (err, data) {
-				if (!err) {
-					try {
-						let parsedTemplate = JSON.parse(data);
-						let uploadTasks = [];
-
-						//Create upload-task for each chapter
-						for (let i = options.resume -1; i < parsedTemplate.length; i++) {
-							uploadTasks.push((cb) => {
-								console.log('Uploading: Vol. ' + parsedTemplate[i].volume + ' Ch. ' + parsedTemplate[i].chapter);
-								uploadChapter(options.manga, parsedTemplate[i], (err, success) => {
-									if (!err) {
-										cb(null);
-									} else {
-										cb({ err: err, position: i });
-									}
-								});
-							});
-						}
-
-						//Start process
-						async.series(uploadTasks, (err, results) => {
+					//Load template
+					fs.readFile(options.template, 'utf8', function (err, data) {
 							if (!err) {
-								console.log('All done!');
+								try {
+									let parsedTemplate = JSON.parse(data);
+									let uploadTasks = [];
+
+									//Create upload-task for each chapter
+									for (let i = options.resume -1; i < parsedTemplate.length; i++) {
+										uploadTasks.push((cb) => {
+											console.log('Uploading: Vol. ' + parsedTemplate[i].volume + ' Ch. ' + parsedTemplate[i].chapter);
+											uploadChapter(options.manga, parsedTemplate[i], (err, success) => {
+												if (!err) {
+													cb(null);
+												} else {
+													cb({ err: err, position: i });
+												}
+											});
+										});
+									}
+
+									//Start process
+									async.series(uploadTasks, (err, results) => {
+										if (!err) {
+											console.log('All done!');
+										} else {
+											console.log('Error: An upload failed!');
+											console.log(err);
+											console.log('\nIf you want to resume at this position later use the resume-option (-r) with a value of ' + (err.position +1));
+											console.log('Should you like to skip this chapter use the resume-option with a value of ' + (err.position +2));
+										}
+									});
+								} catch (ex) {
+									console.log('Error: Template-file is broken');
+									console.log(ex);
+									process.exit(14);
+								}
 							} else {
-								console.log('Error: An upload failed!');
-								console.log(err);
-								console.log('\nIf you want to resume at this position later use the resume-option (-r) with a value of ' + (err.position +1));
-								console.log('Should you like to skip this chapter use the resume-option with a value of ' + (err.position +2));
+								console.log('Error: Template-file is inaccessible');
+								process.exit(4);
 							}
 						});
-					} catch (ex) {
-						console.log('Error: Template-file is broken');
-						console.log(ex);
-						process.exit(14);
-					}
 				} else {
-					console.log('Error: Template-file is inaccessible');
-					process.exit(4);
+					console.log('Error: You are not logged in!');
+					process.exit(15);
 				}
-			});
+			} else {
+				console.log('Error: Login-check failed!');
+				console.log(err);
+				process.exit(10);
+			}
+		});
 	});
 
 
@@ -281,6 +296,10 @@ function isLoggedIn(cb) {
 
 //Function to upload a chapter
 function uploadChapter(manga, chapter, cb) {
+	//Fix cases where no volume or group is specified
+	if (chapter.volume === -1) { chapter.volume = ''; }
+	if (chapter.group === -1) { chapter.group = 2; }
+
 	//Check if file can be read
 	request.post(
 		{
@@ -330,3 +349,4 @@ function uploadChapter(manga, chapter, cb) {
 // 	12 -> Invalid language_id
 //	13 -> Invalid manga_id
 //	14 -> Template-file is broken
+//	15 -> User is not logged in
