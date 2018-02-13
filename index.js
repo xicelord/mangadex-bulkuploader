@@ -9,7 +9,7 @@ const cookieStore = require('tough-cookie-file-store');
 var request = require('request');
 
 const cookieFilePath = './mangadex-cookies.json';
-const versionCode = '0.1.1';
+const versionCode = '0.1.2';
 var cookieJar;
 
 //Create cookie-file (if not exists)
@@ -80,6 +80,9 @@ program
 			.on('end', () => {
 				console.log('Done!');
 				console.log(found_files);
+
+				//Sort files in alphabetical order
+				found_files.sort((a, b) => a.localeCompare(b));
 
 				//Loop through found files and fetch data from filepath/filename
 				let template = [];
