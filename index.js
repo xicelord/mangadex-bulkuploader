@@ -70,7 +70,7 @@ program
 				console.log('Using title-regex: ' + options.title_regex);
 			} else {
 				console.log('Error: Invalid regex supplied for title');
-				process.exit(1);
+				process.exit(16);
 			}
 		}
 
@@ -117,8 +117,8 @@ program
 						entry.chapter = parseFloat(entry.chapter[1].replace('x', '.').replace('p', '.'));
 					} else { entry.chapter = 0; }
 
+					//Title-regex supplied? -> Match title
 					if (options.title_regex !== undefined) {
-						// Match title
 						entry.title = options.title_regex.exec(file);
 						if (entry.title && entry.title.length > 0) {
 							// pick the last group as the title
@@ -274,6 +274,7 @@ program
 		console.log('\t\t-t, --template <template_path>\t\tPath where the template should be stored (eg: "/path/template.json")');
 		console.log('\t\t-v, --volume_regex <volume_regex>\tRegex (case-insensitive) to detect the volume. Default: "v(?:olume(?:.)?)?(\\d+)"');
 		console.log('\t\t-c, --chapter_regex <chapter_regex>\tRegex (case-insensitive) to detect the chapter. Default: "c(?:h(?:apter)?)?(?:\\D)?(\\d+([\\.|x|p]\\d+)?)"');
+		console.log('\t\t-n, --title_regex <title_regex>\t\tRegex (case-insensitive) to detect the title. (No default)')
 		console.log('\t\t-l, --language <language_id>\t\tID of the language (eg: 1) (Default: 1 (english))');
 		console.log('\t\t-g, --group <n>\t\t\t\tDefault group for chapters in this template (eg: 657)\n');
 
@@ -375,3 +376,4 @@ function uploadChapter(manga, chapter, cb) {
 //	13 -> Invalid manga_id
 //	14 -> Template-file is broken
 //	15 -> User is not logged in
+//	16 -> Invalid Title-Regex
