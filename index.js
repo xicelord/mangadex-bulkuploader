@@ -46,6 +46,7 @@ program
 	.option('-t, --template <template_path>')
 	.option('-v, --volume_regex <volume_regex>')
 	.option('-c, --chapter_regex <chapter_regex>')
+	.option('-n, --title_regex <title_regex>')
 	.option('-g, --group <group>', '', parseInt)
 	.option('-l, --language <language>', '', parseInt)
 	.action((options) => {
@@ -62,6 +63,16 @@ program
 		if (!regex_check.err) { options.volume_regex = regex_check.regex; console.log('Using volume-regex: ' + options.volume_regex); } else { console.log('Error: Invalid regex supplied for volume.'); process.exit(2); }
 		regex_check = loadRegex(options.chapter_regex);
 		if (!regex_check.err) { options.chapter_regex = regex_check.regex; console.log('Using chapter-regex: ' + options.chapter_regex); } else { console.log('Error: Invalid regex supplied for chapter.'); process.exit(3); }
+		if (options.title_regex !== undefined) {
+			regex_check = loadRegex(options.title_regex);
+			if (!regex_check.err) {
+				options.title_regex = regex_check.regex;
+				console.log('Using title-regex: ' + options.title_regex);
+			} else {
+				console.log('Error: Invalid regex supplied for title');
+				process.exit(1);
+			}
+		}
 
 		//Scan directory for files
 		let found_files = [];
@@ -105,6 +116,17 @@ program
 					if (entry.chapter && entry.chapter.length >= 2) {
 						entry.chapter = parseFloat(entry.chapter[1].replace('x', '.').replace('p', '.'));
 					} else { entry.chapter = 0; }
+
+					if (options.title_regex !== undefined) {
+						// Match title
+						entry.title = options.title_regex.exec(file);
+						if (entry.title && entry.title.length > 0) {
+							// pick the last group as the title
+							entry.title = entry.title[entry.title.length-1];
+						} else {
+							entry.title = '';
+						}
+					}
 
 					template.push(entry);
 				});
