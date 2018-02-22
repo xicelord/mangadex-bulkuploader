@@ -23,6 +23,7 @@
 		-t, --template <template_path>		Path where the template should be stored (eg: "/path/template.json")
 		-v, --volume_regex <volume_regex>	Regex (case-insensitive) to detect the volume. Default: "v(?:olume(?:.)?)?(\d+)"
 		-c, --chapter_regex <chapter_regex>	Regex (case-insensitive) to detect the chapter. Default: "c(?:h(?:apter)?)?(?:\D)?(\d+([\.|x|p]\d+)?)"
+		-n, --title_regex <title_regex>		Regex (case-insensitive) to detect the title. (No default)
 		-l, --language <language_id>		ID of the language (eg: 1) (Default: 1 (english))
 		-g, --group <n>				Default group for chapters in this template (eg: 657)
 
