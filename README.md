@@ -21,7 +21,7 @@
 	generate
 		-d, --directory <directory>		Directory which should be scanned (eg: "/path/to/scan")
 		-t, --template <template_path>		Path where the template should be stored (eg: "/path/template.json")
-		-v, --volume_regex <volume_regex>	Regex (case-insensitive) to detect the volume. Default: "v(?:olume(?:.)?)?(\d+)"
+		-v, --volume_regex <volume_regex>	Regex (case-insensitive) to detect the volume. Default: "v(?:ol|olume)?\D?(\d+)"
 		-c, --chapter_regex <chapter_regex>	Regex (case-insensitive) to detect the chapter. Default: "c(?:h(?:apter)?)?(?:\D)?(\d+([\.|x|p]\d+)?)"
 		-n, --title_regex <title_regex>		Regex (case-insensitive) to detect the title. (No default)
 		-l, --language <language_id>		ID of the language (eg: 1) (Default: 1 (english))
