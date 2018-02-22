@@ -347,7 +347,11 @@ function uploadChapter(manga, chapter, cb) {
 		(err, httpResponse, body) => {
 			if (!err) {
 				if (httpResponse.statusCode == 200) {
-					cb(null, true);
+					if (body === '') {
+						cb(null, true);
+					} else {
+						cb({ msg: 'Server rejected the chapter', response: body }, false);
+					}
 				} else {
 					cb({ msg: 'Invalid statusCode', statusCode: httpResponse.statusCode }, false);
 				}
