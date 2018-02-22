@@ -54,7 +54,7 @@ program
 		if (!Number.isInteger(options.group)) { options.group = -1; }
 		if (!options.language) { options.language = 1; }
 		if (!Number.isInteger(options.language)) { console.log('Error: Invalid language-id'); process.exit(12) }
-		if (options.volume_regex === undefined) { options.volume_regex = 'v(?:olume(?:.)?)?(\\d+)'; }
+		if (options.volume_regex === undefined) { options.volume_regex = 'v(?:ol|olume)?\\D?(\\d+)'; }
 		if (options.chapter_regex === undefined) { options.chapter_regex = 'c(?:h(?:apter)?)?(?:\\D)?(\\d+([\\.|x|p]\\d+)?)'; }
 		if (!options.template) { console.log('Error: No template-file has been specified'); process.exit(4); }
 
@@ -272,7 +272,7 @@ program
 		console.log('\tgenerate');
 		console.log('\t\t-d, --directory <directory>\t\tDirectory which should be scanned (eg: "/path/to/scan")')
 		console.log('\t\t-t, --template <template_path>\t\tPath where the template should be stored (eg: "/path/template.json")');
-		console.log('\t\t-v, --volume_regex <volume_regex>\tRegex (case-insensitive) to detect the volume. Default: "v(?:olume(?:.)?)?(\\d+)"');
+		console.log('\t\t-v, --volume_regex <volume_regex>\tRegex (case-insensitive) to detect the volume. Default: "v(?:ol|olume)?\\D?(\\d+)"');
 		console.log('\t\t-c, --chapter_regex <chapter_regex>\tRegex (case-insensitive) to detect the chapter. Default: "c(?:h(?:apter)?)?(?:\\D)?(\\d+([\\.|x|p]\\d+)?)"');
 		console.log('\t\t-n, --title_regex <title_regex>\t\tRegex (case-insensitive) to detect the title. (No default)')
 		console.log('\t\t-l, --language <language_id>\t\tID of the language (eg: 1) (Default: 1 (english))');
