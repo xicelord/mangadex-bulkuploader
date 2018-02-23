@@ -11,6 +11,7 @@
   "dependencies": {
     "async": "^2.6.0",
     "commander": "^2.14.1",
+    "glob": "^7.1.2",
     "request": "^2.83.0",
     "tough-cookie-file-store": "^1.2.0",
     "walker": "^1.0.7"

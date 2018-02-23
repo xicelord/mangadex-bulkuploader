@@ -6,7 +6,9 @@ const fs = require('fs');
 const async = require('async');
 const walker = require('walker');
 const cookieStore = require('tough-cookie-file-store');
+const util = require('util');
 var request = require('request');
+var glob = require('glob');
 
 const cookieFilePath = './mangadex-cookies.json';
 const versionCode = '0.2';
@@ -208,48 +210,39 @@ program
 					if (!Number.isInteger(options.resume)) { options.resume = 1; }
 					if (!options.template) { console.log('Error: No template-file has been specified'); process.exit(4); }
 
-					//Load template
-					fs.readFile(options.template, 'utf8', function (err, data) {
-							if (!err) {
-								try {
-									let parsedTemplate = JSON.parse(data);
-									let uploadTasks = [];
+					// Support glob if string contains a *
+					if (options.template.indexOf('*') !== -1) {
+						
+						glob(options.template, [], function (err, files) {
 
-									//Create upload-task for each chapter
-									for (let i = options.resume -1; i < parsedTemplate.length; i++) {
-										uploadTasks.push((cb) => {
-											console.log('Uploading: Vol. ' + parsedTemplate[i].volume + ' Ch. ' + parsedTemplate[i].chapter);
-											uploadChapter(options.manga, parsedTemplate[i], (err, success) => {
-												if (!err) {
-													cb(null);
-												} else {
-													cb({ err: err, position: i });
-												}
-											});
-										});
-									}
+							let paths = [];
 
-									//Start process
-									async.series(uploadTasks, (err, results) => {
-										if (!err) {
-											console.log('All done!');
-										} else {
-											console.log('Error: An upload failed!');
-											console.log(err);
-											console.log('\nIf you want to resume at this position later use the resume-option (-r) with a value of ' + (err.position +1));
-											console.log('Should you like to skip this chapter use the resume-option with a value of ' + (err.position +2));
-										}
-									});
-								} catch (ex) {
-									console.log('Error: Template-file is broken');
-									console.log(ex);
-									process.exit(14);
-								}
+							for (var i = 0; i < files.length; i++) {
+								paths.push(files[i]);
+							}
+
+							// Sanity-chech and list the templates that will be uploaded
+							if (paths.length < 1) {
+								console.log('Error: No template-files have been found!');
+								process.exit(1);
 							} else {
-								console.log('Error: Template-file is inaccessible');
-								process.exit(4);
+								console.log(util.format("Batch-uploading %d template-files:", paths.length));
+								for (var i = 0; i < paths.length; i++) {
+									console.log("\t"+paths[i]);
+								}
+								console.log(); // Newline
+							}
+
+							for (var i = 0; i < paths.length; i++) {
+								processTemplate(paths[i], options);
 							}
 						});
+					}
+					else {
+						// Regular single-path
+						processTemplate(options.template, options);
+					}
+
 				} else {
 					console.log('Error: You are not logged in!');
 					process.exit(15);
@@ -294,6 +287,52 @@ program
 		console.log('\t(4) Upload using the "upload"-command');
 	});
 
+// Processes a template file at $templatePath and uploads its contents
+function processTemplate(templatePath, options)
+{
+	//Load template
+	fs.readFile(templatePath, 'utf8', function (err, data) {
+		if (!err) {
+			try {
+				let parsedTemplate = JSON.parse(data);
+				let uploadTasks = [];
+
+				//Create upload-task for each chapter
+				for (let i = options.resume -1; i < parsedTemplate.length; i++) {
+					uploadTasks.push((cb) => {
+						console.log('Uploading: Vol. ' + parsedTemplate[i].volume + ' Ch. ' + parsedTemplate[i].chapter);
+						uploadChapter(options.manga, parsedTemplate[i], (err, success) => {
+							if (!err) {
+								cb(null);
+							} else {
+								cb({ err: err, position: i });
+							}
+						});
+					});
+				}
+
+				//Start process
+				async.series(uploadTasks, (err, results) => {
+					if (!err) {
+						console.log('All done!');
+					} else {
+						console.log('Error: An upload failed!');
+						console.log(err);
+						console.log('\nIf you want to resume at this position later use the resume-option (-r) with a value of ' + (err.position +1));
+						console.log('Should you like to skip this chapter use the resume-option with a value of ' + (err.position +2));
+					}
+				});
+			} catch (ex) {
+				console.log('Error: Template-file is broken');
+				console.log(ex);
+				process.exit(14);
+			}
+		} else {
+			console.log('Error: Template-file is inaccessible');
+			process.exit(4);
+		}
+	});
+}
 
 //Function to load regex safely
 function loadRegex(regex) {
