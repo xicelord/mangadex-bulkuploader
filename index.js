@@ -7,6 +7,7 @@ const async = require('async');
 const walker = require('walker');
 const cookieStore = require('tough-cookie-file-store');
 const util = require('util');
+const event = require('events');
 var request = require('request');
 var glob = require('glob');
 
@@ -252,9 +253,20 @@ program
 								console.log(); // Newline
 							}
 
+							let templateTasks = [];
+
 							for (var i = 0; i < paths.length; i++) {
-								processTemplate(paths[i], options);
+								templateTasks.push((cb) => {
+									console.log('Processing template '+paths[i]);
+									processTemplate(paths[i], options);
+								});
 							}
+							
+							async.series(templateTasks, (err, results) => {
+								if (!err) {
+									console.log('All templates processed!');
+								}
+							});
 						});
 					}
 					else {
