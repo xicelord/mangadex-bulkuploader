@@ -11,6 +11,7 @@ const stringSimilarity = require('string-similarity');
 
 var request = require('request');
 var glob = require('glob');
+var uploadQueue = [];
 
 const cookieFilePath = './mangadex-cookies.json';
 const versionCode = '0.2';
@@ -236,33 +237,29 @@ program
 						
 						glob(options.template, [], function (err, files) {
 
-							let paths = [];
-
-							for (var i = 0; i < files.length; i++) {
-								paths.push(files[i]);
-							}
-
 							// Sanity-chech and list the templates that will be uploaded
-							if (paths.length < 1) {
+							if (files.length < 1) {
 								console.log('Error: No template-files have been found!');
 								process.exit(1);
 							} else {
-								console.log(util.format("Batch-uploading %d template-files:", paths.length));
-								for (var i = 0; i < paths.length; i++) {
-									console.log("\t"+paths[i]);
+								console.log(util.format("Batch-uploading %d template-files:", files.length));
+								for (var i = 0; i < files.length; i++) {
+									console.log("\t"+files[i]);
+									uploadQueue.push(files[i]);
 								}
 								console.log(); // Newline
 							}
 
 							let templateTasks = [];
-
-							for (var i = 0; i < paths.length; i++) {
+							for (var i = 0; i < uploadQueue.length; i++) {
 								templateTasks.push((cb) => {
-									console.log('Processing template '+paths[i]);
-									processTemplate(paths[i], options);
+									let path = uploadQueue.pop();
+									console.log('Processing template '+path);
+									processTemplate(path, options);
 								});
 							}
 							
+							uploadQueue.reverse();
 							async.series(templateTasks, (err, results) => {
 								if (!err) {
 									console.log('All templates processed!');
