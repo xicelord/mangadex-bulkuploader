@@ -7,7 +7,8 @@ const async = require('async');
 const walker = require('walker');
 const cookieStore = require('tough-cookie-file-store');
 const util = require('util');
-const event = require('events');
+const stringSimilarity = require('string-similarity');
+
 var request = require('request');
 var glob = require('glob');
 
@@ -286,6 +287,30 @@ program
 		});
 	});
 
+program
+	.command('group <action> [search]')
+	.description('Searches for groups inside a cached db')
+	.action((options, search) => {
+		
+		switch (options) {
+			case "update":
+				buildGroupCache();
+				break;
+
+			case "search":
+				if (search.length < 1) {
+					console.log("Not enough search terms specified.");
+					process.exit(1);
+				}
+				searchGroupCache(search);
+				break;
+				
+			default:
+				console.log("No action specified. Nothing to do...");
+		}
+		
+	});
+
 
 //Handle general stuff & --help
 program
@@ -432,6 +457,94 @@ function uploadChapter(manga, chapter, cb) {
 			}
 
 		});
+}
+
+function buildGroupCache()
+{
+	console.log("Retrieving group list...");
+	request.get(
+		{
+			url: 'https://mangadex.com/upload/1',
+			headers: {
+				'referer': 'https://mangadex.com/'
+			}
+		},
+		(err, httpResponse, body) => {
+			if (!err) {
+				if (httpResponse.statusCode == 200) {
+					// Start matching
+					var regex = new RegExp('<option data-icon=\'glyphicon-([a-z-]+)\'\\s*value=\'(\\d+)\'>([^<]+)<', 'ig');
+					var match;
+					let groupList = [];
+					let idList = [];
+					var n = 0;
+					console.log("Parsing...");
+					while ((match = regex.exec(body)) !== null) {
+						var id = parseInt(match[2]);
+						// Check if the id is already present
+						if (idList.indexOf(id) > -1)
+							continue;
+						idList.push(id);
+
+						groupList.push({
+							name: match[3],
+							id: id,
+							open: (match[1] === 'ok')
+						});
+						n++;
+					}
+					console.log(util.format("Successfully processed %d groups", n));
+					var json = JSON.stringify(groupList);
+					fs.writeFile('groupcache.json', json, (err) => {
+						if (err) {
+							console.log("Failed to write groupCache to disk!");
+							console.log(err);
+							process.exit(1);
+						}
+						console.log("Group cache updated.");
+					});
+				}
+				else {
+					console.log("Failed to retrieve upload page, unexpected http code", httpResponse.statusCode);
+				}
+			} else {
+				console.log("Failed to retrieve upload page", err);
+			}
+		}
+	);
+}
+
+function searchGroupCache(keyword)
+{
+	if (!fs.existsSync("groupcache.json")) {
+		console.log("Group cache doesn't exist, try running 'group update' first.");
+		process.exit(1);
+	}
+	fs.readFile("groupcache.json", "utf8", (err, data) => {
+		if (err) throw err;
+		
+		var groupList = JSON.parse(data);
+		var searchEntries = [];
+
+		for (var i = 0; i < groupList.length; i++) {
+			if (!groupList[i].open) continue; // Skip closed groups
+			groupList[i].score = stringSimilarity.compareTwoStrings(groupList[i].name, keyword);
+			if (groupList[i].score >= 0.4)
+				searchEntries.push(groupList[i]);
+		}
+		// Sort by score
+		searchEntries.sort((a, b) => {return b.score - a.score});
+
+		if (searchEntries.length > 0) {
+			console.log("Best matches (max. 10):\n\n ID\tNAME (SCORE)\n==============================");
+			for (var i = 0; i < 10 && i < searchEntries.length; i++) {
+				console.log(util.format(" %d\t%s (%f)", searchEntries[i].id, searchEntries[i].name, searchEntries[i].score.toFixed(2)));
+			}
+		} else {
+			console.log("No matches found.");
+		}
+		
+	});
 }
 
 
