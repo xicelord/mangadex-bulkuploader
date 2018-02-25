@@ -49,11 +49,28 @@ program
 	.option('-v, --volume_regex <volume_regex>')
 	.option('-c, --chapter_regex <chapter_regex>')
 	.option('-n, --title_regex <title_regex>')
-	.option('-g, --group <group>', '', parseInt)
+	.option('-g, --group <group>', 'All associated comma-separated scanlation group IDs')
 	.option('-l, --language <language>', '', parseInt)
 	.action((options) => {
 		//Check input
-		if (!Number.isInteger(options.group)) { options.group = -1; }
+
+		// Parse group parameter
+		if (options.group.indexOf(',') !== -1) {
+			// Multiple group ids
+			let tmp = options.group.toString().split(',');
+			options.group = [];
+			for (var i = 0; i < tmp.length; i++) {
+				options.group.push(parseInt(tmp[i].trim()));
+			}
+		}
+		else {
+			// Single group id
+			options.group = [parseInt(options.group.toString().trim())];
+		}
+		if (options.group.length < 1) {
+			options.group = [-1];
+		}	
+
 		if (!options.language) { options.language = 1; }
 		if (!Number.isInteger(options.language)) { console.log('Error: Invalid language-id'); process.exit(12) }
 		if (options.volume_regex === undefined) { options.volume_regex = 'v(?:ol|olume)?\\D?(\\d+)'; }
@@ -103,7 +120,9 @@ program
 					let entry = {
 						file: file,
 						title: '',
-						group: options.group,
+						group: options.group[0],
+						group_2: options.group[1],
+						group_3: options.group[2],
 						language: options.language
 					};
 
@@ -379,6 +398,8 @@ function uploadChapter(manga, chapter, cb) {
 				volume_number: chapter.volume,
 				chapter_number: chapter.chapter,
 				group_id: chapter.group,
+				group_id_2: chapter.group_2,
+				group_id_3: chapter.group_3,
 				lang_id: chapter.language,
 				file: fs.createReadStream(chapter.file)
 			}
