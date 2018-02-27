@@ -50,7 +50,7 @@
 	(3) use "group search 'keyword'" to search for group. If keyword contains spaces or special characters, put it in quotes.
 
 Example output:
-```
+```zsh
 ⇒  node index.js login -u %USERNAME% -p %PASSWORD%
 Logging in as "%USERNAME%"...
 Login successful!
