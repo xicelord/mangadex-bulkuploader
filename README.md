@@ -49,8 +49,8 @@
 	(2) use "group update" command to generate group cache file
 	(3) use "group search 'keyword'" to search for group. If keyword contains spaces or special characters, put it in quotes.
 
-	Example output:
-	```
+Example output:
+```
 ⇒  node index.js login -u %USERNAME% -p %PASSWORD%
 Logging in as "%USERNAME%"...
 Login successful!
@@ -69,4 +69,4 @@ Best matches (max. 10):
  452    Kirei Cake (1)
  1705   HotCakes (0.43)
  634    KIKE Scans (0.43)
-	```
+```
