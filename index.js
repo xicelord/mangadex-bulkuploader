@@ -458,7 +458,7 @@ function uploadChapter(manga, chapter, cb) {
 
 function buildGroupCache()
 {
-	console.log("Retrieving group list...");
+	console.log("Retrieving group list (Must be logged in or list is empty!!)...");
 	request.get(
 		{
 			url: 'https://mangadex.com/upload/1',
@@ -469,6 +469,7 @@ function buildGroupCache()
 		(err, httpResponse, body) => {
 			if (!err) {
 				if (httpResponse.statusCode == 200) {
+
 					// Start matching
 					var regex = new RegExp('<option data-icon=\'glyphicon-([a-z-]+)\'\\s*value=\'(\\d+)\'>([^<]+)<', 'ig');
 					var match;
