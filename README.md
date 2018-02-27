@@ -48,3 +48,25 @@
 	(1) Log in using the "login"-command
 	(2) use "group update" command to generate group cache file
 	(3) use "group search 'keyword'" to search for group. If keyword contains spaces or special characters, put it in quotes.
+
+	Example output:
+	```
+⇒  node index.js login -u %USERNAME% -p %PASSWORD%
+Logging in as "%USERNAME%"...
+Login successful!
+
+⇒  node index.js group update
+Retrieving group list...
+Parsing...
+Successfully processed 2092 groups
+Group cache updated.
+
+⇒  node index.js group search "kirei cake"
+Best matches (max. 10):
+
+ ID     NAME (SCORE)
+==============================
+ 452    Kirei Cake (1)
+ 1705   HotCakes (0.43)
+ 634    KIKE Scans (0.43)
+	```
