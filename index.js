@@ -14,7 +14,7 @@ var glob = require('glob');
 var uploadQueue = [];
 
 const cookieFilePath = './mangadex-cookies.json';
-const versionCode = '0.2';
+const versionCode = '0.2.0';
 var cookieJar;
 
 //Create cookie-file (if not exists)
