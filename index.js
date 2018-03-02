@@ -6,7 +6,12 @@ const fs = require('fs');
 const async = require('async');
 const walker = require('walker');
 const cookieStore = require('tough-cookie-file-store');
+const util = require('util');
+const stringSimilarity = require('string-similarity');
+
 var request = require('request');
+var glob = require('glob');
+var uploadQueue = [];
 
 const cookieFilePath = './mangadex-cookies.json';
 const versionCode = '0.2';
@@ -47,11 +52,28 @@ program
 	.option('-v, --volume_regex <volume_regex>')
 	.option('-c, --chapter_regex <chapter_regex>')
 	.option('-n, --title_regex <title_regex>')
-	.option('-g, --group <group>', '', parseInt)
+	.option('-g, --group <group>', 'All associated comma-separated scanlation group IDs')
 	.option('-l, --language <language>', '', parseInt)
 	.action((options) => {
 		//Check input
-		if (!Number.isInteger(options.group)) { options.group = -1; }
+
+		// Parse group parameter
+		if (options.group.indexOf(',') !== -1) {
+			// Multiple group ids
+			let tmp = options.group.toString().split(',');
+			options.group = [];
+			for (var i = 0; i < tmp.length; i++) {
+				options.group.push(parseInt(tmp[i].trim()));
+			}
+		}
+		else {
+			// Single group id
+			options.group = [parseInt(options.group.toString().trim())];
+		}
+		if (options.group.length < 1) {
+			options.group = [-1];
+		}	
+
 		if (!options.language) { options.language = 1; }
 		if (!Number.isInteger(options.language)) { console.log('Error: Invalid language-id'); process.exit(12) }
 		if (options.volume_regex === undefined) { options.volume_regex = 'v(?:ol|olume)?\\D?(\\d+)'; }
@@ -101,7 +123,9 @@ program
 					let entry = {
 						file: file,
 						title: '',
-						group: options.group,
+						group: options.group[0],
+						group_2: options.group[1],
+						group_3: options.group[2],
 						language: options.language
 					};
 
@@ -208,48 +232,46 @@ program
 					if (!Number.isInteger(options.resume)) { options.resume = 1; }
 					if (!options.template) { console.log('Error: No template-file has been specified'); process.exit(4); }
 
-					//Load template
-					fs.readFile(options.template, 'utf8', function (err, data) {
-							if (!err) {
-								try {
-									let parsedTemplate = JSON.parse(data);
-									let uploadTasks = [];
+					// Support glob if string contains a *
+					if (options.template.indexOf('*') !== -1) {
+						
+						glob(options.template, [], function (err, files) {
 
-									//Create upload-task for each chapter
-									for (let i = options.resume -1; i < parsedTemplate.length; i++) {
-										uploadTasks.push((cb) => {
-											console.log('Uploading: Vol. ' + parsedTemplate[i].volume + ' Ch. ' + parsedTemplate[i].chapter);
-											uploadChapter(options.manga, parsedTemplate[i], (err, success) => {
-												if (!err) {
-													cb(null);
-												} else {
-													cb({ err: err, position: i });
-												}
-											});
-										});
-									}
-
-									//Start process
-									async.series(uploadTasks, (err, results) => {
-										if (!err) {
-											console.log('All done!');
-										} else {
-											console.log('Error: An upload failed!');
-											console.log(err);
-											console.log('\nIf you want to resume at this position later use the resume-option (-r) with a value of ' + (err.position +1));
-											console.log('Should you like to skip this chapter use the resume-option with a value of ' + (err.position +2));
-										}
-									});
-								} catch (ex) {
-									console.log('Error: Template-file is broken');
-									console.log(ex);
-									process.exit(14);
-								}
+							// Sanity-chech and list the templates that will be uploaded
+							if (files.length < 1) {
+								console.log('Error: No template-files have been found!');
+								process.exit(1);
 							} else {
-								console.log('Error: Template-file is inaccessible');
-								process.exit(4);
+								console.log(util.format("Batch-uploading %d template-files:", files.length));
+								for (var i = 0; i < files.length; i++) {
+									console.log("\t"+files[i]);
+									uploadQueue.push(files[i]);
+								}
+								console.log(); // Newline
 							}
+
+							let templateTasks = [];
+							for (var i = 0; i < uploadQueue.length; i++) {
+								templateTasks.push((cb) => {
+									let path = uploadQueue.pop();
+									console.log('Processing template '+path);
+									processTemplate(path, options);
+								});
+							}
+							
+							uploadQueue.reverse();
+							async.series(templateTasks, (err, results) => {
+								if (!err) {
+									console.log('All templates processed!');
+								}
+							});
 						});
+					}
+					else {
+						// Regular single-path
+						processTemplate(options.template, options);
+					}
+
 				} else {
 					console.log('Error: You are not logged in!');
 					process.exit(15);
@@ -260,6 +282,30 @@ program
 				process.exit(10);
 			}
 		});
+	});
+
+program
+	.command('group <action> [search]')
+	.description('Searches for groups inside a cached db')
+	.action((options, search) => {
+		
+		switch (options) {
+			case "update":
+				buildGroupCache();
+				break;
+
+			case "search":
+				if (search.length < 1) {
+					console.log("Not enough search terms specified.");
+					process.exit(1);
+				}
+				searchGroupCache(search);
+				break;
+				
+			default:
+				console.log("No action specified. Nothing to do...");
+		}
+		
 	});
 
 
@@ -294,6 +340,52 @@ program
 		console.log('\t(4) Upload using the "upload"-command');
 	});
 
+// Processes a template file at $templatePath and uploads its contents
+function processTemplate(templatePath, options)
+{
+	//Load template
+	fs.readFile(templatePath, 'utf8', function (err, data) {
+		if (!err) {
+			try {
+				let parsedTemplate = JSON.parse(data);
+				let uploadTasks = [];
+
+				//Create upload-task for each chapter
+				for (let i = options.resume -1; i < parsedTemplate.length; i++) {
+					uploadTasks.push((cb) => {
+						console.log('Uploading: Vol. ' + parsedTemplate[i].volume + ' Ch. ' + parsedTemplate[i].chapter);
+						uploadChapter(options.manga, parsedTemplate[i], (err, success) => {
+							if (!err) {
+								cb(null);
+							} else {
+								cb({ err: err, position: i });
+							}
+						});
+					});
+				}
+
+				//Start process
+				async.series(uploadTasks, (err, results) => {
+					if (!err) {
+						console.log('All done!');
+					} else {
+						console.log('Error: An upload failed!');
+						console.log(err);
+						console.log('\nIf you want to resume at this position later use the resume-option (-r) with a value of ' + (err.position +1));
+						console.log('Should you like to skip this chapter use the resume-option with a value of ' + (err.position +2));
+					}
+				});
+			} catch (ex) {
+				console.log('Error: Template-file is broken');
+				console.log(ex);
+				process.exit(14);
+			}
+		} else {
+			console.log('Error: Template-file is inaccessible');
+			process.exit(4);
+		}
+	});
+}
 
 //Function to load regex safely
 function loadRegex(regex) {
@@ -340,6 +432,8 @@ function uploadChapter(manga, chapter, cb) {
 				volume_number: chapter.volume,
 				chapter_number: chapter.chapter,
 				group_id: chapter.group,
+				group_id_2: chapter.group_2,
+				group_id_3: chapter.group_3,
 				lang_id: chapter.language,
 				file: fs.createReadStream(chapter.file)
 			}
@@ -360,6 +454,95 @@ function uploadChapter(manga, chapter, cb) {
 			}
 
 		});
+}
+
+function buildGroupCache()
+{
+	console.log("Retrieving group list (Must be logged in or list is empty!!)...");
+	request.get(
+		{
+			url: 'https://mangadex.com/upload/1',
+			headers: {
+				'referer': 'https://mangadex.com/'
+			}
+		},
+		(err, httpResponse, body) => {
+			if (!err) {
+				if (httpResponse.statusCode == 200) {
+
+					// Start matching
+					var regex = new RegExp('<option data-icon=\'glyphicon-([a-z-]+)\'\\s*value=\'(\\d+)\'>([^<]+)<', 'ig');
+					var match;
+					let groupList = [];
+					let idList = [];
+					var n = 0;
+					console.log("Parsing...");
+					while ((match = regex.exec(body)) !== null) {
+						var id = parseInt(match[2]);
+						// Check if the id is already present
+						if (idList.indexOf(id) > -1)
+							continue;
+						idList.push(id);
+
+						groupList.push({
+							name: match[3],
+							id: id,
+							open: (match[1] === 'ok')
+						});
+						n++;
+					}
+					console.log(util.format("Successfully processed %d groups", n));
+					var json = JSON.stringify(groupList);
+					fs.writeFile('groupcache.json', json, (err) => {
+						if (err) {
+							console.log("Failed to write groupCache to disk!");
+							console.log(err);
+							process.exit(1);
+						}
+						console.log("Group cache updated.");
+					});
+				}
+				else {
+					console.log("Failed to retrieve upload page, unexpected http code", httpResponse.statusCode);
+				}
+			} else {
+				console.log("Failed to retrieve upload page", err);
+			}
+		}
+	);
+}
+
+function searchGroupCache(keyword)
+{
+	if (!fs.existsSync("groupcache.json")) {
+		console.log("Group cache doesn't exist, try running 'group update' first.");
+		process.exit(1);
+	}
+	fs.readFile("groupcache.json", "utf8", (err, data) => {
+		if (err) throw err;
+		
+		var groupList = JSON.parse(data);
+		var searchEntries = [];
+
+		for (var i = 0; i < groupList.length; i++) {
+			if (!groupList[i].open) continue; // Skip closed groups
+			groupList[i].score = stringSimilarity.compareTwoStrings(groupList[i].name, keyword);
+			if (groupList[i].score >= 0.4)
+				searchEntries.push(groupList[i]);
+		}
+		// Sort by score
+		searchEntries.sort((a, b) => {return b.score - a.score});
+
+		if (searchEntries.length > 0) {
+			console.log("Best matches (max. 10):\n\n ID\tNAME (SCORE)\n==============================");
+			for (var i = 0; i < 10 && i < searchEntries.length; i++) {
+				console.log(util.format(" %d\t%s (%f)", searchEntries[i].id, searchEntries[i].name, searchEntries[i].score.toFixed(2)));
+			}
+		} else {
+			console.log("No matches found.");
+		}
+		
+	});
 }
 
 
