@@ -186,7 +186,8 @@ program
 				},
 				formData: {
 					login_username: options.username,
-					login_password: options.password
+					login_password: options.password,
+					remember_me: '1'
 				}
 			},
 			(err, httpResponse, body) => {
