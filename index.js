@@ -58,21 +58,19 @@ program
 		//Check input
 
 		// Parse group parameter
-		if (options.group.indexOf(',') !== -1) {
-			// Multiple group ids
+		if (options.group) {
 			let tmp = options.group.toString().split(',');
 			options.group = [];
-			for (var i = 0; i < tmp.length; i++) {
-				options.group.push(parseInt(tmp[i].trim()));
+
+			for (let i = 0; i <= 2; i++) {
+				if (tmp[i])
+					options.group.push(parseInt(tmp[i].trim()));
+				else
+					options.group.push(-1);
 			}
+		} else {
+			options.group = [-1,-1,-1];
 		}
-		else {
-			// Single group id
-			options.group = [parseInt(options.group.toString().trim())];
-		}
-		if (options.group.length < 1) {
-			options.group = [-1];
-		}	
 
 		if (!options.language) { options.language = 1; }
 		if (!Number.isInteger(options.language)) { console.log('Error: Invalid language-id'); process.exit(12) }
@@ -181,9 +179,9 @@ program
 		console.log('Logging in as "' + options.username + '"...');
 		request.post(
 			{
-				url: 'https://mangadex.com/ajax/actions.ajax.php?function=login',
+				url: 'https://mangadex.org/ajax/actions.ajax.php?function=login',
 				headers: {
-					'referer': 'https://mangadex.com/login',
+					'referer': 'https://mangadex.org/login',
 					'X-Requested-With': 'XMLHttpRequest'
 				},
 				formData: {
@@ -234,7 +232,7 @@ program
 
 					// Support glob if string contains a *
 					if (options.template.indexOf('*') !== -1) {
-						
+
 						glob(options.template, [], function (err, files) {
 
 							// Sanity-chech and list the templates that will be uploaded
@@ -258,7 +256,7 @@ program
 									processTemplate(path, options);
 								});
 							}
-							
+
 							uploadQueue.reverse();
 							async.series(templateTasks, (err, results) => {
 								if (!err) {
@@ -288,7 +286,7 @@ program
 	.command('group <action> [search]')
 	.description('Searches for groups inside a cached db')
 	.action((options, search) => {
-		
+
 		switch (options) {
 			case "update":
 				buildGroupCache();
@@ -301,11 +299,11 @@ program
 				}
 				searchGroupCache(search);
 				break;
-				
+
 			default:
 				console.log("No action specified. Nothing to do...");
 		}
-		
+
 	});
 
 
@@ -407,7 +405,7 @@ function loadJSON(string) {
 
 //Check if user is logged in
 function isLoggedIn(cb) {
-	request('https://mangadex.com/follows', function (err, response, body) {
+	request('https://mangadex.org/follows', function (err, response, body) {
 		cb(err, !body.includes('login_username'));
 	});
 }
@@ -421,9 +419,9 @@ function uploadChapter(manga, chapter, cb) {
 	//Check if file can be read
 	request.post(
 		{
-			url: 'https://mangadex.com/ajax/actions.ajax.php?function=chapter_upload',
+			url: 'https://mangadex.org/ajax/actions.ajax.php?function=chapter_upload',
 			headers: {
-				'referer': 'https://mangadex.com/upload/' + manga,
+				'referer': 'https://mangadex.org/upload/' + manga,
 				'X-Requested-With': 'XMLHttpRequest'
 			},
 			formData: {
@@ -432,8 +430,8 @@ function uploadChapter(manga, chapter, cb) {
 				volume_number: chapter.volume,
 				chapter_number: chapter.chapter,
 				group_id: chapter.group,
-				group_id_2: chapter.group_2,
-				group_id_3: chapter.group_3,
+				group_id_2: (chapter.group_2 === -1) ? undefined : chapter.group_2,
+				group_id_3: (chapter.group_3 === -1) ? undefined : chapter.group_3,
 				lang_id: chapter.language,
 				file: fs.createReadStream(chapter.file)
 			}
@@ -461,9 +459,9 @@ function buildGroupCache()
 	console.log("Retrieving group list (Must be logged in or list is empty!!)...");
 	request.get(
 		{
-			url: 'https://mangadex.com/upload/1',
+			url: 'https://mangadex.org/upload/1',
 			headers: {
-				'referer': 'https://mangadex.com/'
+				'referer': 'https://mangadex.org/'
 			}
 		},
 		(err, httpResponse, body) => {
@@ -520,7 +518,7 @@ function searchGroupCache(keyword)
 	}
 	fs.readFile("groupcache.json", "utf8", (err, data) => {
 		if (err) throw err;
-		
+
 		var groupList = JSON.parse(data);
 		var searchEntries = [];
 
@@ -541,7 +539,7 @@ function searchGroupCache(keyword)
 		} else {
 			console.log("No matches found.");
 		}
-		
+
 	});
 }
 
