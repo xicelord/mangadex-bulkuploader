@@ -1,3 +1,8 @@
+# Notes:
+Currently this software is in beta-stadium.  
+Feel free to make suggestions and create PRs :)  
+Huge thanks to [radonthetyrant](https://github.com/radonthetyrant) for implementing a lot of features & fixing bugs!
+
 # Getting started:
 1. Install NodeJS (if you haven't already)
 2. Fetch the respository (or download it as zip)
