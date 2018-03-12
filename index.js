@@ -154,8 +154,8 @@ program
 						let [primary, secondary] = entry.chapter.split(".");
 						if (secondary !== undefined) { //Checks that secondary number exists. e.g. `7` => `7`. If you use `7.`, then- Wait, why you using `7.`?
 							entry.chapter = [primary, secondary.padStart(secondary_numbering_length[primary], "0")].join(".");
-						} else {
-							console.warn(`File: ${file}\nChapter: ${entry.chapter}\n Trailing "." in chapter number`);
+						} else if (secondary === "") {
+							console.warn(`Trailing "." for Chapter: ${entry.chapter}, File: ${file}`);
 						}
 					} else { entry.chapter = 0; }
 
