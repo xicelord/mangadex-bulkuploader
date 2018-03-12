@@ -120,7 +120,7 @@ program
 				found_files.forEach((file) => {
 					let chapter_result = options.chapter_regex.exec(file);
 					if (chapter_result && chapter_result.length >= 2 ) {
-						[primary, secondary] = chapter_result[1].split(".");
+						let [primary, secondary] = chapter_result[1].split(".");
 						//Make sure we don't get a `NaN` or `TypeError`
 						secondary_numbering_length[primary] = secondary_numbering_length[primary] || 0;
 						secondary = secondary || "";
@@ -151,7 +151,7 @@ program
 					entry.chapter = options.chapter_regex.exec(file);
 					if (entry.chapter && entry.chapter.length >= 2) {
 						entry.chapter = entry.chapter[1].replace('x', '.').replace('p', '.');
-						[primary, secondary] = entry.chapter.split(".");
+						let [primary, secondary] = entry.chapter.split(".");
 						if (secondary !== undefined) { //Checks that secondary number exists. e.g. `7` => `7`. If you use `7.`, then- Wait, why you using `7.`?
 							entry.chapter = [primary, secondary.padStart(secondary_numbering_length[primary], "0")].join(".");
 						} else {
