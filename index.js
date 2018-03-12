@@ -66,10 +66,10 @@ program
 				if (tmp[i])
 					options.group.push(parseInt(tmp[i].trim()));
 				else
-					options.group.push(-1);
+					options.group.push(0);
 			}
 		} else {
-			options.group = [-1,-1,-1];
+			options.group = [0,0,0];
 		}
 
 		if (!options.language) { options.language = 1; }
@@ -131,12 +131,12 @@ program
 					entry.volume = options.volume_regex.exec(file);
 					if (entry.volume && entry.volume.length >= 2) {
 						entry.volume = parseInt(entry.volume[1]);
-					} else { entry.volume = -1; }
+					} else { entry.volume = 0; }
 
 					//Match chapter
 					entry.chapter = options.chapter_regex.exec(file);
 					if (entry.chapter && entry.chapter.length >= 2) {
-						entry.chapter = parseFloat(entry.chapter[1].replace('x', '.').replace('p', '.'));
+						entry.chapter = entry.chapter[1].replace('x', '.').replace('p', '.');
 					} else { entry.chapter = 0; }
 
 					//Title-regex supplied? -> Match title
