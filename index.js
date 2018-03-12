@@ -118,16 +118,16 @@ program
 			 	// Used for padding secondary chapter numbers. "01.1" and "1.1" are counted differently
 				let secondary_numbering_length = {};
 				found_files.forEach((file) => {
-					entry.chapter = options.chapter_regex.exec(file);
-					if (entry.chapter) {
-						[primary, secondary] = entry.chapter.split(".");
+					let chapter_result = options.chapter_regex.exec(file);
+					if (chapter_result && chapter_result.length >= 2 ) {
+						[primary, secondary] = chapter_result[1].split(".");
 						//Make sure we don't get a `NaN` or `TypeError`
 						secondary_numbering_length[primary] = secondary_numbering_length[primary] || 0;
 						secondary = secondary || "";
 		
 						secondary_numbering_length[primary] = Math.max(secondary_numbering_length[primary], secondary.length);
 					}
-				}
+				});
 
 				//Loop through found files and fetch data from filepath/filename
 				let template = [];
