@@ -128,23 +128,23 @@ program
 					};
 
 					//Match volume
-					entry.volume = options.volume_regex.exec(file);
-					if (entry.volume && entry.volume.length >= 2) {
-						entry.volume = parseInt(entry.volume[1]);
+					let volume_result = options.volume_regex.exec(file);
+					if (volume_result && volume_result.length >= 2) {
+						entry.volume = parseInt(volume_result[1]);
 					} else { entry.volume = 0; }
 
 					//Match chapter
-					entry.chapter = options.chapter_regex.exec(file);
-					if (entry.chapter && entry.chapter.length >= 2) {
-						entry.chapter = entry.chapter[1].replace('x', '.').replace('p', '.');
+					let chapter_result = options.chapter_regex.exec(file);
+					if (chapter_result &&  chapter_result.length >= 2) {
+						entry.chapter = chapter_result[1].replace('x', '.').replace('p', '.');
 					} else { entry.chapter = 0; }
 
 					//Title-regex supplied? -> Match title
 					if (options.title_regex !== undefined) {
-						entry.title = options.title_regex.exec(file);
-						if (entry.title && entry.title.length > 0) {
+						let title_result = options.title_regex.exec(file);
+						if (title_result.title && title_result.length > 0) {
 							// pick the last group as the title
-							entry.title = entry.title[entry.title.length-1];
+							entry.title = title_result[title_result.length-1];
 						} else {
 							entry.title = '';
 						}
