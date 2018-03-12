@@ -136,7 +136,7 @@ program
 					//Match chapter
 					entry.chapter = options.chapter_regex.exec(file);
 					if (entry.chapter && entry.chapter.length >= 2) {
-						entry.chapter = parseFloat(entry.chapter[1].replace('x', '.').replace('p', '.'));
+						entry.chapter = entry.chapter[1].replace('x', '.').replace('p', '.');
 					} else { entry.chapter = 0; }
 
 					//Title-regex supplied? -> Match title
