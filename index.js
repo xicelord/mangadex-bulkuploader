@@ -114,6 +114,20 @@ program
 
 				//Sort files in alphabetical order
 				found_files.sort((a, b) => a.localeCompare(b));
+			
+			 	// Used for padding secondary chapter numbers. "01.1" and "1.1" are counted differently
+				let secondary_numbering_length = {};
+				found_files.forEach((file) => {
+					let chapter_result = options.chapter_regex.exec(file);
+					if (chapter_result && chapter_result.length >= 2 ) {
+						let [primary, secondary] = chapter_result[1].split(".");
+						//Make sure we don't get a `NaN` or `TypeError`
+						secondary_numbering_length[primary] = secondary_numbering_length[primary] || 0;
+						secondary = secondary || "";
+		
+						secondary_numbering_length[primary] = Math.max(secondary_numbering_length[primary], secondary.length);
+					}
+				});
 
 				//Loop through found files and fetch data from filepath/filename
 				let template = [];
@@ -137,6 +151,12 @@ program
 					entry.chapter = options.chapter_regex.exec(file);
 					if (entry.chapter && entry.chapter.length >= 2) {
 						entry.chapter = entry.chapter[1].replace('x', '.').replace('p', '.');
+						let [primary, secondary] = entry.chapter.split(".");
+						if (secondary !== undefined) { //Checks that secondary number exists. e.g. `7` => `7`. If you use `7.`, then- Wait, why you using `7.`?
+							entry.chapter = [primary, secondary.padStart(secondary_numbering_length[primary], "0")].join(".");
+						} else if (secondary === "") {
+							console.warn(`Trailing "." for Chapter: ${entry.chapter}, File: ${file}`);
+						}
 					} else { entry.chapter = 0; }
 
 					//Title-regex supplied? -> Match title
