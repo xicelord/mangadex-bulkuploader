@@ -17,6 +17,17 @@ const cookieFilePath = './mangadex-cookies.json';
 const versionCode = '0.2.0';
 var cookieJar;
 
+// Load config if exists
+var config = {};
+try {
+	if (fs.existsSync('./config.json')) {
+		let dat = fs.readFileSync('./config.json');
+		config = JSON.parse(dat);
+	}
+} catch (ex) {
+	console.log("Exception thrown trying to read config file: ",ex);
+}
+
 //Create cookie-file (if not exists)
 fs.appendFile(cookieFilePath, '', function (err) {
 	if (!err) {
@@ -193,6 +204,11 @@ program
 	.option('-u, --username <username>')
 	.option('-p, --password <password>')
 	.action((options) => {
+
+		// use config if exists or options.
+		options.username = options.username || config.username || undefined;
+		options.password = options.password || config.password || undefined;
+
 		if (!options.username) { console.log('Error: No username was provided'); process.exit(5); }
 		if (!options.password) { console.log('Error: No password was provided'); process.exit(6); }
 
