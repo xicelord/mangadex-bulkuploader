@@ -7,7 +7,8 @@ Huge thanks to [radonthetyrant](https://github.com/radonthetyrant) for implement
 1. Install NodeJS (if you haven't already)
 2. Fetch the respository (or download it as zip)
 3. Download the dependencies ("npm i")
-4. Execute a command ("node index [command] [options]")
+4. Copy `config.dist.json` to `config.json`, where to insert your Mangadex username and password
+5. Execute a command ("node index [command] [options]")
 
 
 # Usage:
@@ -33,8 +34,8 @@ Huge thanks to [radonthetyrant](https://github.com/radonthetyrant) for implement
 		-g, --group <n>				Default group for chapters in this template (eg: 657 or 2,11 or 5,6,7)
 
 	login
-		-u, --username <username>
-		-p, --password <password>
+		-u, --username <username>		(Optional) use this username instead of the one specified in config.json
+		-p, --password <password>		(Optional) use this password instead of the one specified in config.json
 
 	upload:
 		-t, --template <template_path>		Path where the template should be stored (eg: "/path/template.json")
@@ -56,7 +57,7 @@ Huge thanks to [radonthetyrant](https://github.com/radonthetyrant) for implement
 
 Example output:
 ```zsh
-⇒  node index.js login -u %USERNAME% -p %PASSWORD%
+⇒  node index.js login
 Logging in as "%USERNAME%"...
 Login successful!
 
