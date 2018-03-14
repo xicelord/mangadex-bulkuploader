@@ -17,6 +17,17 @@ const cookieFilePath = './mangadex-cookies.json';
 const versionCode = '0.2.0';
 var cookieJar;
 
+// Load config if exists
+var config = {};
+try {
+	if (fs.existsSync('./config.json')) {
+		let dat = fs.readFileSync('./config.json');
+		config = JSON.parse(dat);
+	}
+} catch (ex) {
+	console.log("Exception thrown trying to read config file: ",ex);
+}
+
 //Create cookie-file (if not exists)
 fs.appendFile(cookieFilePath, '', function (err) {
 	if (!err) {
@@ -114,6 +125,20 @@ program
 
 				//Sort files in alphabetical order
 				found_files.sort((a, b) => a.localeCompare(b));
+			
+			 	// Used for padding secondary chapter numbers. "01.1" and "1.1" are counted differently
+				let secondary_numbering_length = {};
+				found_files.forEach((file) => {
+					let chapter_result = options.chapter_regex.exec(file);
+					if (chapter_result && chapter_result.length >= 2 ) {
+						let [primary, secondary] = chapter_result[1].split(".");
+						//Make sure we don't get a `NaN` or `TypeError`
+						secondary_numbering_length[primary] = secondary_numbering_length[primary] || 0;
+						secondary = secondary || "";
+		
+						secondary_numbering_length[primary] = Math.max(secondary_numbering_length[primary], secondary.length);
+					}
+				});
 
 				//Loop through found files and fetch data from filepath/filename
 				let template = [];
@@ -135,8 +160,14 @@ program
 
 					//Match chapter
 					let chapter_result = options.chapter_regex.exec(file);
-					if (chapter_result &&  chapter_result.length >= 2) {
+					if (chapter_result && chapter_result.length >= 2) {
 						entry.chapter = chapter_result[1].replace('x', '.').replace('p', '.');
+						let [primary, secondary] = entry.chapter.split(".");
+						if (secondary !== undefined) { //Checks that secondary number exists. e.g. `7` => `7`. If you use `7.`, then- Wait, why you using `7.`?
+							entry.chapter = [primary, secondary.padStart(secondary_numbering_length[primary], "0")].join(".");
+						} else if (secondary === "") {
+							console.warn(`Trailing "." for Chapter: ${entry.chapter}, File: ${file}`);
+						}
 					} else { entry.chapter = 0; }
 
 					//Title-regex supplied? -> Match title
@@ -173,6 +204,11 @@ program
 	.option('-u, --username <username>')
 	.option('-p, --password <password>')
 	.action((options) => {
+
+		// use config if exists or options.
+		options.username = options.username || config.username || undefined;
+		options.password = options.password || config.password || undefined;
+
 		if (!options.username) { console.log('Error: No username was provided'); process.exit(5); }
 		if (!options.password) { console.log('Error: No password was provided'); process.exit(6); }
 
