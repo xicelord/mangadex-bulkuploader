@@ -13,11 +13,12 @@ const path = require('path');
 var request = require('request');
 var glob = require('glob');
 var uploadQueue = [];
+var homedir;
 
 if (process.platform  === 'win32') {
-	const homedir = process.env.USERPROFILE;
+	homedir = process.env.USERPROFILE;
 } else {
-	const homedir = process.env.HOME;
+	homedir = process.env.HOME;
 }
 
 const cookieFilePath = path.join(homedir, '.config/mangadex-bulkuploader/cookies.json');
