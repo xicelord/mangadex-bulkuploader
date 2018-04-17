@@ -156,7 +156,7 @@ program
 					entry.volume = options.volume_regex.exec(file);
 					if (entry.volume && entry.volume.length >= 2) {
 						entry.volume = parseInt(entry.volume[1]);
-					} else { entry.volume = 0; }
+					} else { entry.volume = -1; }
 
 					//Match chapter
 					entry.chapter = options.chapter_regex.exec(file);
