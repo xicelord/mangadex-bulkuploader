@@ -156,7 +156,7 @@ program
 					entry.volume = options.volume_regex.exec(file);
 					if (entry.volume && entry.volume.length >= 2) {
 						entry.volume = parseInt(entry.volume[1]);
-					} else { entry.volume = 0; }
+					} else { entry.volume = -1; }
 
 					//Match chapter
 					entry.chapter = options.chapter_regex.exec(file);
@@ -168,7 +168,7 @@ program
 						} else if (secondary === "") {
 							console.warn(`Trailing "." for Chapter: ${entry.chapter}, File: ${file}`);
 						}
-					} else { entry.chapter = -1; }
+					} else { entry.chapter = 0; }
 
 					//Title-regex supplied? -> Match title
 					if (options.title_regex !== undefined) {
