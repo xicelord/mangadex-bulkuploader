@@ -13,15 +13,21 @@ var request = require('request');
 var glob = require('glob');
 var uploadQueue = [];
 
-const cookieFilePath = './mangadex-cookies.json';
+if (process.platform  === 'win32') {
+	const homedir = process.env.USERPROFILE;
+} else {
+	const homedir = process.env.HOME;
+}
+
+const cookieFilePath = path.join(homedir, '.config/mangadex-bulkuploader/cookies.json');
 const versionCode = '0.2.0';
 var cookieJar;
 
 // Load config if exists
 var config = {};
 try {
-	if (fs.existsSync('./config.json')) {
-		let dat = fs.readFileSync('./config.json');
+	if (fs.existsSync(path.join(homedir, './config.json'))) {
+		let dat = fs.readFileSync(path.join(homedir, './config.json'));
 		config = JSON.parse(dat);
 	}
 } catch (ex) {
