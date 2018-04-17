@@ -8,6 +8,7 @@ const walker = require('walker');
 const cookieStore = require('tough-cookie-file-store');
 const util = require('util');
 const stringSimilarity = require('string-similarity');
+const path = require('path');
 
 var request = require('request');
 var glob = require('glob');
