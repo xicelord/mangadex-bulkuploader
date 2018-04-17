@@ -168,7 +168,7 @@ program
 						} else if (secondary === "") {
 							console.warn(`Trailing "." for Chapter: ${entry.chapter}, File: ${file}`);
 						}
-					} else { entry.chapter = 0; }
+					} else { entry.chapter = -1; }
 
 					//Title-regex supplied? -> Match title
 					if (options.title_regex !== undefined) {
