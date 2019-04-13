@@ -25,7 +25,7 @@ try {
 		config = JSON.parse(dat);
 	}
 } catch (ex) {
-	console.log("Exception thrown trying to read config file: ",ex);
+	console.log("Exception thrown trying to read config file: ", ex);
 }
 
 //Create cookie-file (if not exists)
@@ -35,11 +35,11 @@ fs.appendFile(cookieFilePath, '', function (err) {
 		try {
 			cookieJar = request.jar(new cookieStore(cookieFilePath));
 			request = request.defaults({
-					jar: cookieJar,
-					headers: {
-						'User-Agent': 'Icelord-MangaDex-BulkUploader/' + versionCode
-					}
-				});
+				jar: cookieJar,
+				headers: {
+					'User-Agent': 'Icelord-MangaDex-BulkUploader/' + versionCode
+				}
+			});
 		} catch (ex) {
 			console.log('Error: The cookiefile "' + cookieFilePath + '" seems to be broken');
 			console.log(ex);
@@ -80,7 +80,7 @@ program
 					options.group.push(0);
 			}
 		} else {
-			options.group = [0,0,0];
+			options.group = [0, 0, 0];
 		}
 
 		if (!options.language) { options.language = 1; }
@@ -125,17 +125,17 @@ program
 
 				//Sort files in alphabetical order
 				found_files.sort((a, b) => a.localeCompare(b));
-			
-			 	// Used for padding secondary chapter numbers. "01.1" and "1.1" are counted differently
+
+				// Used for padding secondary chapter numbers. "01.1" and "1.1" are counted differently
 				let secondary_numbering_length = {};
 				found_files.forEach((file) => {
 					let chapter_result = options.chapter_regex.exec(file);
-					if (chapter_result && chapter_result.length >= 2 ) {
+					if (chapter_result && chapter_result.length >= 2) {
 						let [primary, secondary] = chapter_result[1].split(".");
 						//Make sure we don't get a `NaN` or `TypeError`
 						secondary_numbering_length[primary] = secondary_numbering_length[primary] || 0;
 						secondary = secondary || "";
-		
+
 						secondary_numbering_length[primary] = Math.max(secondary_numbering_length[primary], secondary.length);
 					}
 				});
@@ -175,7 +175,7 @@ program
 						let title_result = options.title_regex.exec(file);
 						if (title_result.title && title_result.length > 0) {
 							// pick the last group as the title
-							entry.title = title_result[title_result.length-1];
+							entry.title = title_result[title_result.length - 1];
 						} else {
 							entry.title = '';
 						}
@@ -203,11 +203,14 @@ program
 	.description('Login to mangadex. Generate a cookie-file')
 	.option('-u, --username <username>')
 	.option('-p, --password <password>')
+	.option('-2, --twofactor <twofactor>')
+
 	.action((options) => {
 
 		// use config if exists or options.
 		options.username = options.username || config.username || undefined;
 		options.password = options.password || config.password || undefined;
+		options.twofactor = options.twofactor || config.twofactor || undefined
 
 		if (!options.username) { console.log('Error: No username was provided'); process.exit(5); }
 		if (!options.password) { console.log('Error: No password was provided'); process.exit(6); }
@@ -223,17 +226,22 @@ program
 				formData: {
 					login_username: options.username,
 					login_password: options.password,
+					two_factor: options.twofactor,
 					remember_me: '1'
 				}
 			},
 			(err, httpResponse, body) => {
 				if (!err) {
+					if (body === 'missing_2fa') {
+						console.log('Error: Need twofactor!');
+						process.exit(17);
+					};
 					isLoggedIn((err, logged_in) => {
 						if (!err) {
 							if (logged_in) {
 								console.log('Login successful!');
 							} else {
-								console.log('Error: Not logged in. Probably wrong username or password!');
+								console.log('Error: Not logged in. Probably wrong username, password, or twofactor!');
 								process.exit(11);
 							}
 						} else {
@@ -279,7 +287,7 @@ program
 							} else {
 								console.log(util.format("Batch-uploading %d template-files:", files.length));
 								for (var i = 0; i < files.length; i++) {
-									console.log("\t"+files[i]);
+									console.log("\t" + files[i]);
 									uploadQueue.push(files[i]);
 								}
 								console.log(); // Newline
@@ -289,7 +297,7 @@ program
 							for (var i = 0; i < uploadQueue.length; i++) {
 								templateTasks.push((cb) => {
 									let path = uploadQueue.pop();
-									console.log('Processing template '+path);
+									console.log('Processing template ' + path);
 									processTemplate(path, options);
 								});
 							}
@@ -361,7 +369,8 @@ program
 
 		console.log('\tlogin');
 		console.log('\t\t-u, --username <username>');
-		console.log('\t\t-p, --password <password>\n');
+		console.log('\t\t-p, --password <password>');
+		console.log('\t\t-2, --twofactor <twofactor>\n');
 
 		console.log('\tupload:');
 		console.log('\t\t-t, --template <template_path>\t\tPath where the template should be stored (eg: "/path/template.json")');
@@ -376,8 +385,7 @@ program
 	});
 
 // Processes a template file at $templatePath and uploads its contents
-function processTemplate(templatePath, options)
-{
+function processTemplate(templatePath, options) {
 	//Load template
 	fs.readFile(templatePath, 'utf8', function (err, data) {
 		if (!err) {
@@ -386,7 +394,7 @@ function processTemplate(templatePath, options)
 				let uploadTasks = [];
 
 				//Create upload-task for each chapter
-				for (let i = options.resume -1; i < parsedTemplate.length; i++) {
+				for (let i = options.resume - 1; i < parsedTemplate.length; i++) {
 					uploadTasks.push((cb) => {
 						console.log('Uploading: Vol. ' + parsedTemplate[i].volume + ' Ch. ' + parsedTemplate[i].chapter);
 						uploadChapter(options.manga, parsedTemplate[i], (err, success) => {
@@ -406,8 +414,8 @@ function processTemplate(templatePath, options)
 					} else {
 						console.log('Error: An upload failed!');
 						console.log(err);
-						console.log('\nIf you want to resume at this position later use the resume-option (-r) with a value of ' + (err.position +1));
-						console.log('Should you like to skip this chapter use the resume-option with a value of ' + (err.position +2));
+						console.log('\nIf you want to resume at this position later use the resume-option (-r) with a value of ' + (err.position + 1));
+						console.log('Should you like to skip this chapter use the resume-option with a value of ' + (err.position + 2));
 					}
 				});
 			} catch (ex) {
@@ -426,7 +434,7 @@ function processTemplate(templatePath, options)
 function loadRegex(regex) {
 	try {
 		return { err: null, regex: new RegExp(regex, 'i') };
-	} catch(ex) {
+	} catch (ex) {
 		return { err: ex, regex: null };
 	}
 }
@@ -435,7 +443,7 @@ function loadRegex(regex) {
 function loadJSON(string) {
 	try {
 		return { err: null, json: JSON.stringify(string) };
-	} catch(ex) {
+	} catch (ex) {
 		return { err: ex, json: null };
 	}
 }
@@ -491,8 +499,7 @@ function uploadChapter(manga, chapter, cb) {
 		});
 }
 
-function buildGroupCache()
-{
+function buildGroupCache() {
 	console.log("Retrieving group list (Must be logged in or list is empty!!)...");
 	request.get(
 		{
@@ -547,8 +554,7 @@ function buildGroupCache()
 	);
 }
 
-function searchGroupCache(keyword)
-{
+function searchGroupCache(keyword) {
 	if (!fs.existsSync("groupcache.json")) {
 		console.log("Group cache doesn't exist, try running 'group update' first.");
 		process.exit(1);
@@ -566,7 +572,7 @@ function searchGroupCache(keyword)
 				searchEntries.push(groupList[i]);
 		}
 		// Sort by score
-		searchEntries.sort((a, b) => {return b.score - a.score});
+		searchEntries.sort((a, b) => { return b.score - a.score });
 
 		if (searchEntries.length > 0) {
 			console.log("Best matches (max. 10):\n\n ID\tNAME (SCORE)\n==============================");
@@ -593,9 +599,10 @@ function searchGroupCache(keyword)
 //	 8 -> Cookie-file broken
 //	 9 -> Login failed (request-error)
 //	10 -> Login-check failed (request-error)
-//	11 -> Login failed (probably wrong username or password)
+//	11 -> Login failed (probably wrong username, password, or twofactor)
 // 	12 -> Invalid language_id
 //	13 -> Invalid manga_id
 //	14 -> Template-file is broken
 //	15 -> User is not logged in
 //	16 -> Invalid Title-Regex
+//  17 -> Need twofactor

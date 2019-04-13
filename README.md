@@ -36,6 +36,7 @@ Huge thanks to [radonthetyrant](https://github.com/radonthetyrant) for implement
 	login
 		-u, --username <username>		(Optional) use this username instead of the one specified in config.json
 		-p, --password <password>		(Optional) use this password instead of the one specified in config.json
+		-2, --twofactor <twofactor>		(Optional) use this twofactor instead of the one specified in config.json
 
 	upload:
 		-t, --template <template_path>		Path where the template should be stored (eg: "/path/template.json")
