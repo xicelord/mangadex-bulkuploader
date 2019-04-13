@@ -514,7 +514,7 @@ function buildGroupCache()
 				if (httpResponse.statusCode == 200) {
 
 					// Start matching
-					var regex = new RegExp('<option data-icon=\'glyphicon-([a-z-]+)\'\\s*value=\'(\\d+)\'>([^<]+)<', 'ig');
+					var regex = new RegExp('<option data-subtext=\'(|[^<]+)\' value=\'([0-9]+)\'>([^<]+)<', 'ig');
 					var match;
 					let groupList = [];
 					let idList = [];
@@ -530,7 +530,7 @@ function buildGroupCache()
 						groupList.push({
 							name: match[3],
 							id: id,
-							open: (match[1] === 'ok')
+							open: (match[1] === '')
 						});
 						n++;
 					}
