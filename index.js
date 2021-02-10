@@ -8,20 +8,28 @@ const walker = require('walker');
 const cookieStore = require('tough-cookie-file-store');
 const util = require('util');
 const stringSimilarity = require('string-similarity');
+const path = require('path');
 
 var request = require('request');
 var glob = require('glob');
 var uploadQueue = [];
+var homedir;
 
-const cookieFilePath = './mangadex-cookies.json';
+if (process.platform  === 'win32') {
+	homedir = process.env.USERPROFILE;
+} else {
+	homedir = process.env.HOME;
+}
+
+const cookieFilePath = path.join(homedir, '.config/mangadex-bulkuploader/cookies.json');
 const versionCode = '0.2.0';
 var cookieJar;
 
 // Load config if exists
 var config = {};
 try {
-	if (fs.existsSync('./config.json')) {
-		let dat = fs.readFileSync('./config.json');
+	if (fs.existsSync(path.join(homedir, './config.json'))) {
+		let dat = fs.readFileSync(path.join(homedir, './config.json'));
 		config = JSON.parse(dat);
 	}
 } catch (ex) {
